@@ -48,7 +48,7 @@ npm install
 npm run build
 
 # Start Next.js (all interfaces) and websocket server through PM2
-# pm2 start npm --name next-app -- run start -- --hostname 0.0.0.0 --port 3000
+pm2 start npm --name next-app -- run start -- --hostname 0.0.0.0 --port 3000
 pm2 start websocket-server.js --name websocket-server
 pm2 save
 pm2 startup systemd -u root --hp /root
