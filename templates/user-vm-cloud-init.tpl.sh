@@ -5,7 +5,7 @@ set -eux
 apt-get -o Acquire::ForceIPv4=true update || apt-get -o Acquire::ForceIPv4=true update
 apt-get -o Acquire::ForceIPv4=true upgrade -y || true
 
-# Install base dependencies for Kubernetes tooling
+# Install base dependencies for Kubernetes tooling / terminal stack
 apt-get -o Acquire::ForceIPv4=true install -y \
   apt-transport-https \
   ca-certificates \
@@ -17,25 +17,16 @@ apt-get -o Acquire::ForceIPv4=true install -y \
   ebtables \
   ethtool \
   git \
-  build-essential \
-  docker.io
+  build-essential
 
-# Enable and start Docker for Minikube
-systemctl enable docker
-systemctl start docker
+# Disable swap for k3s and ensure it stays off
+swapoff -a
+sed -i.bak '/swap/d' /etc/fstab
 
-# Install kubectl
-KUBECTL_VERSION="$(curl -L -s https://dl.k8s.io/release/stable.txt)"
-curl -L --fail -o /usr/local/bin/kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
-chmod +x /usr/local/bin/kubectl
-
-# Install Minikube
-curl -L --fail -o /tmp/minikube "https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64"
-install /tmp/minikube /usr/local/bin/minikube
-rm /tmp/minikube
-
-# Start Minikube cluster
-minikube start --driver=docker --wait=all
+# Install single-node k3s cluster (bundles kubectl via /usr/local/bin/kubectl)
+curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server --write-kubeconfig-mode 644" sh -s -
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+chmod 644 "$KUBECONFIG"
 
 # Install Node.js
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
@@ -57,7 +48,7 @@ npm install
 npm run build
 
 # Start Next.js (all interfaces) and websocket server through PM2
-pm2 start npm --name next-app -- run start -- --hostname 0.0.0.0 --port 3000
+# pm2 start npm --name next-app -- run start -- --hostname 0.0.0.0 --port 3000
 pm2 start websocket-server.js --name websocket-server
 pm2 save
 pm2 startup systemd -u root --hp /root
@@ -65,4 +56,4 @@ pm2 startup systemd -u root --hp /root
 # Register session with proxy
 curl -X POST http://{{PROXY_IP}}:8080/register-session \
   -H "Content-Type: application/json" \
-  -d '{"sessionId": "{{SESSION_ID}}", "vmIp": "'$(hostname -I | awk '{print $1}')"'}'
+  -d '{"sessionId": "{{SESSION_ID}}", "vmIp": "'$(hostname -I | awk '{print $1}')'"}'
