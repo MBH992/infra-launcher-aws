@@ -90,11 +90,7 @@ cat <<'ENV' > /opt/terminal-server/.env.local
 NEXT_PUBLIC_WEBSOCKET_URL=ws://{{PROXY_IP}}:8080/session/{{SESSION_ID}}
 ENV
 
-if [ -f package-lock.json ]; then
-  retry 3 npm ci
-else
-  retry 3 npm install
-fi
+retry 3 npm install
 retry 3 npm run build
 
 # Start Next.js (all interfaces) and websocket server through PM2
