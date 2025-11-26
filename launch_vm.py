@@ -15,6 +15,7 @@ USER_INSTANCE_TYPE = os.getenv("USER_INSTANCE_TYPE", "t3.small")
 USER_KEY_NAME = os.getenv("USER_KEY_NAME")
 USER_AMI_ID = os.getenv("USER_AMI_ID")
 PROXY_IP = os.getenv("PROXY_IP")
+DEBUG_SSH_CIDR = os.getenv("DEBUG_SSH_CIDR", "")
 
 if not all([AWS_REGION, USER_SUBNET_ID, USER_KEY_NAME, USER_AMI_ID, PROXY_IP]):
     raise ValueError("Missing required AWS configuration environment variables")
@@ -72,6 +73,24 @@ def _create_session_security_group(session_id: str) -> str:
                 }
             ],
         )
+        if DEBUG_SSH_CIDR:
+            print(f"⚠️ [TEST ONLY] Allowing temporary SSH from {DEBUG_SSH_CIDR}")
+            ec2_client.authorize_security_group_ingress(
+                GroupId=sg_id,
+                IpPermissions=[
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 22,
+                        "ToPort": 22,
+                        "IpRanges": [
+                            {
+                                "CidrIp": DEBUG_SSH_CIDR,
+                                "Description": "TEST ONLY - temporary SSH access",
+                            }
+                        ],
+                    }
+                ],
+            )
     except ClientError as exc:
         # Rollback SG if rule creation fails
         try:
