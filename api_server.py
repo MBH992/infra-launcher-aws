@@ -1,25 +1,30 @@
 ## launch_user_vm() 호출, 프록시 서버에 등록 요청, API 응답 반환
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Body
 from fastapi.responses import JSONResponse
 from launch_vm import launch_user_vm, delete_user_vm
 import requests
 import os
+from typing import Optional, Dict
 
 PROXY_API = os.getenv("PROXY_API", "http://10.0.1.4:8080/register-session")  # 프록시 서버의 내부 IP로 요청
 
 app = FastAPI()
 
 @app.post("/api/launch-vm")
-def launch_vm_endpoint():
+def launch_vm_endpoint(payload: Optional[Dict[str, str]] = Body(default=None)):
     try:
         session_id, private_ip = launch_user_vm()
+        user_id = payload.get("userId") if payload else None
 
         # 프록시에 세션 등록
-        res = requests.post(PROXY_API, json={
+        register_payload = {
             "sessionId": session_id,
             "vmIp": private_ip
-        })
+        }
+        if user_id:
+            register_payload["userId"] = user_id
+        res = requests.post(PROXY_API, json=register_payload)
 
         if res.status_code != 200:
             # 여기서 VM을 다시 삭제해주는 보상 트랜잭션 로직을 추가할 수 있습니다.
