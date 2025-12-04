@@ -46,6 +46,7 @@ npm install
 # Start websocket server through PM2
 pm2 delete websocket-server >/dev/null 2>&1 || true
 pm2 start node --name websocket-server -- websocket-server.js
+export K8S_API_PORT=8900
 pm2 start node --name k8s-api-server -- k8s-api-server.js
 pm2 save
 pm2 startup systemd -u root --hp /root
