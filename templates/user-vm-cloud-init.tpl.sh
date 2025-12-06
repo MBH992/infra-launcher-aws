@@ -1,7 +1,6 @@
 #!/bin/bash
 set -eux
 
-
 # Update and upgrade packages (force IPv4 to avoid apt IPv6 stalls)
 apt-get -o Acquire::ForceIPv4=true update || apt-get -o Acquire::ForceIPv4=true update
 apt-get -o Acquire::ForceIPv4=true upgrade -y || true
@@ -39,14 +38,14 @@ npm install -g pm2
 # Clone or update terminal backend code
 mkdir -p /opt/terminal-server
 cd /opt/terminal-server
-git clone https://github.com/getsoss/learn-kubernetes .
+git clone https://github.com/getsoss/learn-kubernetes-vm .
 
 npm install
 
 # Start websocket server through PM2
 pm2 delete websocket-server >/dev/null 2>&1 || true
 pm2 start node --name websocket-server -- websocket-server.js
-export K8S_API_PORT=8900
+export K8S_API_PORT=8890
 pm2 start node --name k8s-api-server -- k8s-api-server.js
 pm2 save
 pm2 startup systemd -u root --hp /root
