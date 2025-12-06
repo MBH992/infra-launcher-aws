@@ -42,6 +42,7 @@ cd /opt/terminal-server
 git clone https://github.com/getsoss/learn-kubernetes .
 
 npm install
+npm run dev
 
 # Start websocket server through PM2
 pm2 delete websocket-server >/dev/null 2>&1 || true
